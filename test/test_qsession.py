@@ -1,7 +1,7 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 #
-#
+# Author: dengos
 
 
 
@@ -42,7 +42,7 @@ class QsessionTest(unittest.TestCase):
             for address in stream.readlines():
                 self.assertEqual(True, self.session.is_addr_valid(address))
 
-    def test_checkFormal(self):
+    def test_checkFormat(self):
         """docstring for test_checkFormal"""
         filename = "valid_check_formal"
         # format:  cmd  session_value  data  expected_ret
@@ -53,17 +53,17 @@ class QsessionTest(unittest.TestCase):
                 cmd = items[0]
                 if cmd == "0":
                     self.session.mail_from = items[1]
-                    ret = self.session.checkFormal(items[2], int(cmd))
+                    ret = self.session.checkFormat(items[2], int(cmd))
                     self.assertEqual(ret, bool(items[3]))
                 elif cmd == "1":
                     self.session.mail_to = items[1]
-                    ret = self.session.checkFormal(items[2], int(cmd))
+                    ret = self.session.checkFormat(items[2], int(cmd))
                     self.assertEqual(ret, bool(items[3]))
                 elif cmd == "2":
-                    ret = self.session.checkFormal(items[1], int(cmd))
+                    ret = self.session.checkFormat(items[1], int(cmd))
                     self.assertEqual(ret, bool(items[2]))
                 elif cmd == "3":
-                    ret = self.session.checkFormal(items[1], int(cmd))
+                    ret = self.session.checkFormat(items[1], int(cmd))
                     self.assertEqual(ret, bool(items[2]))
 
     def test_feed(self):

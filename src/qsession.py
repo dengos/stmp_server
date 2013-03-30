@@ -2,12 +2,21 @@
 import os
 import time, re
 class Qsession(object):
+  # a simple logic service --- trace the status of the user-server session.
   def __init__( self, LOG ):
+    # stat means status.
+    # 0. waiting for user log in.
+    # 1. waiting for the from-mail-address
+    # 2. waiting for the to-mail-address
+    # 3. waiting for the word 'data'
+    # 4. waiting for the content
     self.stat = 0 # waiting for 'helo'
     self.mail_content = ''
     self.LOG = LOG
     self.content_read_cnt = 0
+    # the MAX_LEN ( text ) can be held in Memory.
     self.MAX_LEN = 1024 * 1024 # 1MB
+    # Error tips.
     self.tips = [
         "Input Valid. ( 'From: xxx@yy.com' )",
         "Input Valid. ( 'To: xxx@yy.com' )",
@@ -22,12 +31,14 @@ class Qsession(object):
     f.close()
 
   def is_addr_valid( self, addr ):
+    # Regular Expression --- match the Email address
     if re.match(r'[\w_]+@[\w_]+\.[\w_]+', addr):
       return True
     else :
       return False
 
-  def checkFormal(self, data, cnt):
+  def checkFormat(self, data, cnt):
+    # check th format of the E-mail content.
     if cnt == 0:
       return data[:6] == "From: " and data[6:] == self.mail_from
     elif cnt == 1:
@@ -38,15 +49,21 @@ class Qsession(object):
       return data == ''
 
   def feed(self, data):
+    # feed function --- some simple logic check.
+    # take the argument -- data ( one line from the front end )
+    # return ( back_message, is_continue )
     if data == 'quit' and self.stat != 3 :
+      # note that one can type 'quit' in E-mail content
+      # and this should be viewed as a 'quit' instrution.
       # User Quit.
       return ( '221 Bye', False )
-
+    # the message back to the front end and then to the user.
     back_msg = None
     if self.stat == 0 :
       if data[:4] == "helo":
         self.stat += 1
         back_msg = "220 QQMail Ver 1.0"
+        # filename += time_stamp
         self.filename = 'mails/' + data[5:] + '-' + time.ctime().replace(' ', '-' )
 
       else :
@@ -73,11 +90,12 @@ class Qsession(object):
         self.stat += 1
         back_msg = "354 start mail input; en with <CRLF>.<CRLR>"
       else:
-        back_msg = "502 Error\nTips: Input 'data'"
+        back_msg = "502 Error\nTips: Input 'data'."
 
     elif self.stat == 4 :
+      # content_read_cnt is used to formalize the content ( just the first 4 lines ).
       if self.content_read_cnt < 4:
-        if not self.checkFormal(data, self.content_read_cnt):
+        if not self.checkFormat(data, self.content_read_cnt):
           back_msg = "502 Error\nTips:" + self.tips[self.content_read_cnt]
         else :
           self.content_read_cnt += 1
@@ -92,7 +110,7 @@ class Qsession(object):
         back_msg = "250 OK"
         self.writeFile( )
 
-    #self.LOG.write(back_msg)
+    # self.LOG.write(back_msg)
     return ( back_msg , True )
 
 

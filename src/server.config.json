@@ -5,9 +5,10 @@
     "bufsize"    :      1024,
     "timeout"    :      30,
     "server_name":      "stmp",
-    "log_file"   :      "./log.txt",
+    "log_file"   :      "/var/log/stmp-daemon/stmp-daemon.log",
+    "pid_file"   :      "/var/run/stmp-daemon/stmp-daemon.pid",
     "log_format" :      "%(asctime)-15s %(message)s",
     "log_format_old" :      "%(asctime)-15s %(clientip)s %(message)s",
-    "mail_dir"   :      "./mails/",
-    "message"    :      "./message.json"
+    "mail_dir"   :      "/home/dengos/stmp/test/mails/",
+    "message"    :      "/home/dengos/stmp/test/message.json"
 }

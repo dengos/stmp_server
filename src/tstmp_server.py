@@ -1,37 +1,43 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8  -*-
 #
+# Author: dengos
+#
 
 
 
 
-import daemon
 import time
 import socket
 import threading
 import logging
 import json
-import pdb
-from stmp_log import STMPLog
+from stmp import *
 from qsession import Qsession
 
+
+##
+# @brief
+# This is a wrap-up function, for threading
 def stmp_thread(machine):
     machine.run()
 
 
+##
+# @brief
+#
+# Usage:
+#     config = json.load(open(config_file))
+#     logger = logging.getLogger(logger_name)
+#     server = TSTMPServer(config, logger)
+#     server.run()
+#
 class TSTMPServer:
-    def __init__(self, json_config):
+    def __init__(self, json_config, logger):
         """docstring for __init__"""
         self.config = json_config
-        self.setup()
-
-    def setup(self):
-        # 准备日志对象
-        logging.basicConfig(format=self.config["log_format"], \
-                filename=self.config["log_file"])
-        self.logger = logging.getLogger(self.config["server_name"])
+        self.logger = logger
         self.message = json.load(open(self.config["message"]))
-
 
     def create_listenfd(self):
         listenfd = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -44,7 +50,7 @@ class TSTMPServer:
     ##
     # @brief
     #
-    # @return
+    # @return None
     def run(self):
         listenfd = self.create_listenfd()
         while True:
@@ -60,15 +66,23 @@ class TSTMPServer:
 
 
 
+##
+# @brief
+# A simple worker object for threading.
+# When server accpet a connection from client, a new simple
+# worker will be created along with a new thread.
+# The main stmp logic is implemented by Qsession class, this
+# worker only connect data, feed data to Qsession, sending the
+# response back to client.
 class STMPMachine:
     """docstring for STMPMachine"""
-    def __init__(self, conn, addr, log, message, json_config):
+    def __init__(self, conn, addr, logger, message, json_config):
         self.conn = conn
         self.addr = addr
-        self.log  = log
+        self.logger  = logger
         self.message = message
         self.config  = json_config
-        self.session = Qsession(log)
+        self.session = Qsession(logger)
         self.timeout = self.config["timeout"]
         self.bufsize = self.config["bufsize"]
 
@@ -76,45 +90,41 @@ class STMPMachine:
         self.conn.send(msg)
 
     def read(self):
-        # timeout 只有在接收用户数据时候需要考虑
-        self.conn.settimeout(self.timeout)
         try:
+            # we only need to monitor the timeout for
+            # reading data from client socket
+            self.conn.settimeout(self.timeout)
             data = self.conn.recv(self.bufsize)
+            self.conn.settimeout(None)
         except socket.timeout:
-            # 直接设置为None, data中应该没有数据??
-            self.log.write(self.message["timeout"])
+            self.logger.write(self.message["timeout"])
             data = None
-        self.conn.settimeout(None)
+        except socket.error:
+            self.logger.write("socket error")
+            data = None
         return data
 
     def close(self):
         self.conn.close()
 
 
+    ##
+    # @brief
+    #
+    # @return
     def run(self):
-        self.log.write(self.message["enter"])
-        is_continue = True
-        while is_continue:
-            data = self.read()
-            pdb.set_trace()
-            # read None 意味着超时
-            if data is None:
-                break
-            response, is_continue = self.session.feed(data)
-            if response is not None:
-                self.write(response)
-        self.log.write(self.message["exit"])
-        self.close()
-
-
-def main():
-    pass
-
-#with daemon.DaemonContext():
-#    pass
-
-if __name__ == "__main__":
-    main()
-
-
+        try:
+            self.logger.write(self.message["enter"])
+            is_continue = True
+            while is_continue:
+                data = self.read()
+                if data is None:
+                    break
+                response, is_continue = self.session.feed(data)
+                if response is not None:
+                    self.write(response)
+            self.logger.write(self.message["exit"])
+            self.close()
+        except:
+            pass
 
