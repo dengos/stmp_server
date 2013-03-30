@@ -10,8 +10,13 @@ import time
 import socket
 import threading
 import logging
+import json
+import pdb
 from stmp_log import STMPLog
 from qsession import Qsession
+
+def stmp_thread(machine):
+    machine.run()
 
 
 class TSTMPServer:
@@ -48,7 +53,7 @@ class TSTMPServer:
                 conn, addr = pair
                 log = STMPLog(self.logger, addr)
                 stmp_machine = STMPMachine(conn, addr, log, self.message, self.config)
-                worker = threading.Thread(target = stmp_machine.run, args = (stmp_machine, ))
+                worker = threading.Thread(target = stmp_thread, args = (stmp_machine, ))
                 worker.daemon = True
                 worker.start()
                 # 主线程不需要 close conn ?
@@ -68,13 +73,13 @@ class STMPMachine:
         self.bufsize = self.config["bufsize"]
 
     def write(self, msg):
-        self.send(msg)
+        self.conn.send(msg)
 
     def read(self):
         # timeout 只有在接收用户数据时候需要考虑
         self.conn.settimeout(self.timeout)
         try:
-            data = self.conn.recv(bufsize)
+            data = self.conn.recv(self.bufsize)
         except socket.timeout:
             # 直接设置为None, data中应该没有数据??
             self.log.write(self.message["timeout"])
@@ -91,6 +96,7 @@ class STMPMachine:
         is_continue = True
         while is_continue:
             data = self.read()
+            pdb.set_trace()
             # read None 意味着超时
             if data is None:
                 break

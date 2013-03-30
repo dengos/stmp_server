@@ -12,7 +12,7 @@ class STMPLog:
         self.prefix = "{0}:{1}".format(addr[0], addr[1])
 
     def write(self, msg):
-        self.log.warning(prefix + msg)
+        self.log.warning(self.prefix + msg)
 
 
 

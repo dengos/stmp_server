@@ -35,7 +35,8 @@ class ASTMPServer(asyncore.dispatcher):
         self.message = json.load(open(self.config["message"]))
         #
 
-
+    def run(self):
+        asyncore.loop()
 
     ##
     # @brief
@@ -47,7 +48,7 @@ class ASTMPServer(asyncore.dispatcher):
         if pair is not None:
             sock, addr = pair
             # log
-            handler = ASTMPHandler(sock, addr, self.config)
+            handler = ASTMPHandler(sock, addr, self.message, self.config)
 
 
 ##
@@ -115,15 +116,20 @@ class ASTMPHandler(asynchat.async_chat):
 
     def handle_close(self):
         self.log.write(self.message["exit"])
-        super(ASTMPHandler, self).handle_close()
+        asynchat.async_chat.handle_close(self)
+        #super(ASTMPHandler, self).handle_close()
 
     def handle_read(self):
         # timeout 只有在接收用户数据时候需要考虑
         self.settimeout(self.timeout)
         try:
-            ret = super(ASTMPHandler, self).handle_read()
+            ret = asynchat.async_chat.handle_read(self)
+            #ret = super(ASTMPHandler, self).handle_read()
         except socket.timeout:
-            self.log.write("timeout")
+            self.log.write(self.message["timeout"])
+            self.close_when_done()
+        except socket.error:
+            self.log.write("socket error")
             self.close_when_done()
         self.settimeout(None)
         return ret
@@ -131,6 +137,7 @@ class ASTMPHandler(asynchat.async_chat):
 class STMPDaemon(Daemon):
     """docstring for STMPDaemon"""
     def run(self):
+        pdb.set_trace()
         with open("server.config.json", "r") as config:
             stmp = ASTMPServer(config)
             asyncore.loop()
