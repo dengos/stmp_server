@@ -49,6 +49,7 @@ class TSTMPServer:
                 log = STMPLog(self.logger, addr)
                 stmp_machine = STMPMachine(conn, addr, log, self.message, self.config)
                 worker = threading.Thread(target = stmp_machine.run, args = (stmp_machine, ))
+                worker.daemon = True
                 worker.start()
                 # 主线程不需要 close conn ?
 

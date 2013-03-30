@@ -7,9 +7,11 @@ import asynchat
 import socket
 import logging
 import json
+import sys
 import pdb
 from stmp_log import STMPLog
 from qsession import Qsession
+from daemon import Daemon
 
 ##
 # @brief
@@ -18,6 +20,7 @@ class ASTMPServer(asyncore.dispatcher):
     def __init__(self, json_config):
         asyncore.dispatcher.__init__(self)
         self.config = json_config
+        self.setup()
 
     def setup(self):
         # 准备日志对象
@@ -29,12 +32,9 @@ class ASTMPServer(asyncore.dispatcher):
         self.set_reuse_addr()
         self.bind((self.config["host"], self.config["port"] ))
         self.listen(self.config["backlog"])
-        self.message = json.load(self.config["message"])
+        self.message = json.load(open(self.config["message"]))
         #
 
-    def run(self):
-        self.setup()
-        asyncore.loop()
 
 
     ##
@@ -128,7 +128,28 @@ class ASTMPHandler(asynchat.async_chat):
         self.settimeout(None)
         return ret
 
+class STMPDaemon(Daemon):
+    """docstring for STMPDaemon"""
+    def run(self):
+        with open("server.config.json", "r") as config:
+            stmp = ASTMPServer(config)
+            asyncore.loop()
+
+
 
 if __name__ == "__main__":
-    stmp = ASTMPServer("127.0.0.1", 8080)
-    asynchat.asyncore.loop()
+    stmp_daemon = STMPDaemon('/tmp/stmp-daemon.pid')
+    if len(sys.argv) == 2:
+        if sys.argv[1] == 'start':
+            stmp_daemon.start()
+        elif sys.argv[1] == 'stop':
+            stmp_daemon.stop()
+        elif sys.argv[1] == 'restart':
+            daemon.restart()
+        else:
+            print "Unkown command"
+            sys.exit(2)
+        sys.exit(0)
+    else:
+        print "usage: %s start|stop|restart" % sys.argv[0]
+        sys.exit(2)
