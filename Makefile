@@ -1,3 +1,4 @@
 
 clean:
-	rm -rf *.pyc
+	rm -rf src/*.pyc
+	rm -rf test/*.pyc

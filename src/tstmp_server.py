@@ -10,6 +10,7 @@ import time
 import socket
 import threading
 import logging
+import sys
 import json
 from stmp import *
 from qsession import Qsession
@@ -57,7 +58,7 @@ class TSTMPServer:
             if pair is not None:
                 conn, addr = pair
                 log = STMPLog(self.logger, addr)
-                stmp_machine = STMPMachine(conn, addr, log, self.message, self.config)
+                stmp_machine = TSTMPMachine(conn, addr, log, self.message, self.config)
                 worker = threading.Thread(target = stmp_thread, args = (stmp_machine, ))
                 worker.daemon = True
                 worker.start()
@@ -75,7 +76,7 @@ class TSTMPServer:
 # The main stmp logic is implemented by Qsession class, this
 # worker only connect data, feed data to Qsession, sending the
 # response back to client.
-class STMPMachine:
+class TSTMPMachine:
     """docstring for STMPMachine"""
     def __init__(self, conn, addr, logger, message, json_config):
         self.conn = conn

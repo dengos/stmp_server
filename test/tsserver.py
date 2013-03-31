@@ -1,7 +1,7 @@
 import os
 import threading
 
-max_cnt = 5
+max_cnt = 15
 
 def conn():
   os.system("python2 client_holdon.py")
