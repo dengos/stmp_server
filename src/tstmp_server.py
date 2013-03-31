@@ -6,7 +6,6 @@
 
 
 
-
 import time
 import socket
 import threading
@@ -62,7 +61,9 @@ class TSTMPServer:
                 worker = threading.Thread(target = stmp_thread, args = (stmp_machine, ))
                 worker.daemon = True
                 worker.start()
-                # 主线程不需要 close conn ?
+                # unlike c unix programming..
+                # we don't explicit close the conn here, all the work left
+                # for python auto-collector
 
 
 
@@ -99,9 +100,6 @@ class STMPMachine:
         except socket.timeout:
             self.logger.write(self.message["timeout"])
             data = None
-        except socket.error:
-            self.logger.write("socket error")
-            data = None
         return data
 
     def close(self):
@@ -126,5 +124,5 @@ class STMPMachine:
             self.logger.write(self.message["exit"])
             self.close()
         except:
-            pass
+            self.logger.write("Unexpected error: {0}".format(sys.exc_info())[0])
 

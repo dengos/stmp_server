@@ -10,7 +10,7 @@ import logging
 import json
 import sys
 import pdb
-from stmp_log import STMPLog
+from stmp import *
 from qsession import Qsession
 
 ##
@@ -40,8 +40,8 @@ class ASTMPServer(asyncore.dispatcher):
         self.message = json.load(open(self.config["message"]))
 
 
+
     def create_listenfd(self):
-        # 准备监听socket
         self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
         self.set_reuse_addr()
         self.bind((self.config["host"], self.config["port"] ))
@@ -65,7 +65,7 @@ class ASTMPServer(asyncore.dispatcher):
                 handler = ASTMPHandler(sock, addr, self.message, self.config, stmp_log)
             except:
                 # ignore all the exception for simplicity
-                self.log.write("error")
+                self.log.write("Unexpected error: {0}".format(sys.exc_info()[0]))
 
 
 ##
@@ -93,8 +93,8 @@ class ASTMPHandler(asynchat.async_chat):
         # stmp protocol, but, for simplicity.
         self.set_terminator("\r\n")
         # log a user enter
-        self.logger.write(self.message["enter"])
         self.session = Qsession(self.logger)
+        self.logger.write(self.message["enter"])
 
     ##
     # @brief
@@ -143,9 +143,6 @@ class ASTMPHandler(asynchat.async_chat):
             self.settimeout(None)
         except socket.timeout:
             self.logger.write(self.message["timeout"])
-            self.close_when_done()
-        except socket.error:
-            self.logger.write("socket error")
             self.close_when_done()
         return ret
 
